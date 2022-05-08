@@ -16,6 +16,9 @@ If Unity ever implements the Simple Lit master node themselves, it should be an 
 ## How to use
 Once it's been installed, it should simply be a matter of just making a Shader Graph (there's an option in the Asset Creation menu for SIMPLE LIT SHADERGRAPH, near LIT SHADERGRAPH) and choosing the Material "Simple Lit". Basically the same way you'd make a Lit or Unlit shadergraph, instead just choose Simple Lit.
 
+### Example
+![Shader Graph](https://i.imgur.com/r4LI0g5.png)
+
 ## Known issues
 * VFX modifications have not been made, but should just be a missing GUI that needs to be created
 * Deferred rendering path is not supported, since I didn't need it. Adding it should be a simple matter of creating the relevant .hlsl file for the GBuffers and then hooking the UniversalSimpleLitSubTarget to use it
