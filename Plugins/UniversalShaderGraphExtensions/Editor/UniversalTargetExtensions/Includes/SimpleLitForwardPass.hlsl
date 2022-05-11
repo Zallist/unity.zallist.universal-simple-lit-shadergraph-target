@@ -1,4 +1,4 @@
-﻿
+
 void InitializeInputData(Varyings input, SurfaceDescription surfaceDescription, out InputData inputData)
 {
     inputData = (InputData)0;
@@ -114,9 +114,11 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
     //    surface.clearCoatMask       = saturate(surfaceDescription.CoatMask);
     //    surface.clearCoatSmoothness = saturate(surfaceDescription.CoatSmoothness);
     //#endif
-    
+
+#ifdef UNITY_2022_1_OR_NEWER
     surface.albedo = AlphaModulate(surface.albedo, surface.alpha);
-    
+#endif
+
 #ifdef _DBUFFER
     ApplyDecalToSurfaceData(unpacked.positionCS, surface, inputData);
 #endif
