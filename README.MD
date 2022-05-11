@@ -3,9 +3,7 @@ This plugin simply adds a Simple Lit material (SubTarget) to the Universal targe
 If Unity ever implements the Simple Lit master node themselves, it should be an in-place replacement for this. To the point where you'll likely even get code conflicts.
 
 ## Dependencies
-* This was coded to work for URP 13.1.7, but should work for any v13+. It might work for v12, but I've not tested it.
-* This was coded to work for Unity 2022.1, and should work for any 2022+ version. It might work for 2021.2 & 2021.3, but I've not tested it.
-* The changes to make it work for 2021.2+ & v12+ should be fairly minimal, if anyone wants to make that change and open a pull request.
+* Should work on Unity version 2021.2 or higher, with URP version 12 or higher
 
 ## How to install
 * Go to Package Manager in Unity
