@@ -363,7 +363,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #ifdef UNITY_2022_1_OR_NEWER
             public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ bool blendModePreserveSpecular, bool specularHighlights)
 #else
-           public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ /* bool blendModePreserveSpecular,*/ bool specularHighlights)
+            public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ /* bool blendModePreserveSpecular,*/ bool specularHighlights)
 #endif
             {
                 SubShaderDescriptor result = new SubShaderDescriptor()
@@ -382,7 +382,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #ifdef UNITY_2022_1_OR_NEWER
                 result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights, CorePragmas.DOTSForward));
 #else
-               result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights, CorePragmas.DOTSForward));
+                result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights, CorePragmas.DOTSForward));
 #endif
 
                 //if (!complexLit)
@@ -417,7 +417,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #ifdef UNITY_2022_1_OR_NEWER
             public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ bool blendModePreserveSpecular, bool specularHighlights)
 #else
-           public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights)
+            public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights)
 #endif
             {
                 // SM 2.0, GLES
@@ -441,7 +441,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #ifdef UNITY_2022_1_OR_NEWER
                 result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights));
 #else
-               result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights));
+                result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights));
 #endif
 
                 // cull the shadowcaster pass if we know it will never be used
@@ -498,7 +498,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #ifdef UNITY_2022_1_OR_NEWER
             public static PassDescriptor Forward(UniversalTarget target, /*WorkflowMode workflowMode,*/ bool blendModePreserveSpecular, bool specularHighlights, PragmaCollection pragmas = null)
 #else
-           public static PassDescriptor Forward(UniversalTarget target, /*WorkflowMode workflowMode,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights, PragmaCollection pragmas = null)
+            public static PassDescriptor Forward(UniversalTarget target, /*WorkflowMode workflowMode,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights, PragmaCollection pragmas = null)
 #endif
             {
                 var result = new PassDescriptor()
@@ -526,7 +526,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #ifdef UNITY_2022_1_OR_NEWER
                     renderStates = CoreRenderStates.UberSwitchedRenderState(target, blendModePreserveSpecular),
 #else
-                   renderStates = CoreRenderStates.UberSwitchedRenderState(target, /*blendModePreserveSpecular),*/
+                    renderStates = CoreRenderStates.UberSwitchedRenderState(target, /*blendModePreserveSpecular),*/
 #endif
                     pragmas = pragmas ?? CorePragmas.Forward,     // NOTE: SM 2.0 only GL
                     defines = new DefineCollection() { CoreDefines.UseFragmentFog },
