@@ -106,8 +106,13 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             }
 
             // Process SubShaders
+#if UNITY_2022_1_OR_NEWER
             context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitComputeDotsSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ blendModePreserveSpecular, specularHighlights)));
             context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitGLESSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ blendModePreserveSpecular, specularHighlights)));
+#else
+            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitComputeDotsSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ /*blendModePreserveSpecular,*/ specularHighlights)));
+            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitGLESSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ /*blendModePreserveSpecular,*/ specularHighlights)));
+#endif
         }
 
         public override void ProcessPreviewMaterial(Material material)
@@ -526,7 +531,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #if UNITY_2022_1_OR_NEWER
                     renderStates = CoreRenderStates.UberSwitchedRenderState(target, blendModePreserveSpecular),
 #else
-                    renderStates = CoreRenderStates.UberSwitchedRenderState(target, /*blendModePreserveSpecular),*/
+                    renderStates = CoreRenderStates.UberSwitchedRenderState(target/*, blendModePreserveSpecular*/),
 #endif
                     pragmas = pragmas ?? CorePragmas.Forward,     // NOTE: SM 2.0 only GL
                     defines = new DefineCollection() { CoreDefines.UseFragmentFog },
@@ -631,7 +636,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #if UNITY_2022_1_OR_NEWER
                     renderStates = CoreRenderStates.UberSwitchedRenderState(target, blendModePreserveSpecular),
 #else
-                    renderStates = CoreRenderStates.UberSwitchedRenderState(target, /*blendModePreserveSpecular),*/
+                    renderStates = CoreRenderStates.UberSwitchedRenderState(target/*, blendModePreserveSpecular*/),
 #endif
                     pragmas = CorePragmas.DOTSGBuffer,
                     defines = new DefineCollection() { CoreDefines.UseFragmentFog },
