@@ -115,7 +115,7 @@ half4 frag(PackedVaryings packedInput) : SV_TARGET
     //    surface.clearCoatSmoothness = saturate(surfaceDescription.CoatSmoothness);
     //#endif
 
-#ifdef UNITY_2022_1_OR_NEWER
+#if UNITY_VERSION >= 202210
     surface.albedo = AlphaModulate(surface.albedo, surface.alpha);
 #endif
 
