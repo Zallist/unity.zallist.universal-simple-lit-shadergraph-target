@@ -1013,7 +1013,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             const string kForwardPass = "Packages/com.zallist.universal-shadergraph-extensions/Plugins/UniversalShaderGraphExtensions/Editor/UniversalTargetExtensions/Includes/SimpleLitForwardPass.hlsl";
             const string kGBuffer = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl";
             //const string kPBRGBufferPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBRGBufferPass.hlsl";
-            const string kSimpleLitGBufferPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/SimpleLitGBufferPass.hlsl";
+            const string kSimpleLitGBufferPass = "Assets/Plugins/UniversalShaderGraphExtensions/Editor/UniversalTargetExtensions/Includes/SimpleLitGBufferPass.hlsl";
             const string kLightingMetaPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/LightingMetaPass.hlsl";
             // TODO : Replace 2D for Simple one
             const string k2DPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBR2DPass.hlsl";
