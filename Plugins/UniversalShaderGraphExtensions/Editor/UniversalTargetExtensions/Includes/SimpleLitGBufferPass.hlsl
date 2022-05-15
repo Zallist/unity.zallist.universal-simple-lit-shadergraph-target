@@ -92,6 +92,12 @@ FragmentOutput frag(PackedVaryings packedInput)
         //float metallic = surfaceDescription.Metallic;
     #endif
 
+    // Since we are using SurfaceData in this pass we should include the normal check
+    half3 normalTS = half3(0, 0, 0);
+    #if defined(_NORMALMAP) && define(_NORMAL_DROPOFF_TS)
+        normalTS = surfaceDescription.NormalTS;
+    #endif
+
 #ifdef _DBUFFER
     ApplyDecal(unpacked.positionCS,
         surfaceDescription.BaseColor,
@@ -117,7 +123,7 @@ FragmentOutput frag(PackedVaryings packedInput)
     surface.occlusion		= 1.0; //surfaceDescription.Occlusion,
     surface.emission		= surfaceDescription.Emission,
     surface.alpha		= saturate(alpha);
-    surface.normalTS		= surfaceDescription.NormalTS;
+    surface.normalTS		= normalTS;
     surface.clearCoatMask       = 0;
     surface.clearCoatSmoothness = 1;
 
