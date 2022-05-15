@@ -94,7 +94,7 @@ FragmentOutput frag(PackedVaryings packedInput)
 
     // Since we are using SurfaceData in this pass we should include the normal check
     half3 normalTS = half3(0, 0, 0);
-    #if defined(_NORMALMAP) && define(_NORMAL_DROPOFF_TS)
+    #if defined(_NORMALMAP) && defined(_NORMAL_DROPOFF_TS)
         normalTS = surfaceDescription.NormalTS;
     #endif
 
