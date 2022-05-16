@@ -103,7 +103,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 var gui = typeof(ShaderGraphSimpleLitGUI);
 #if HAS_VFX_GRAPH
                 if (TargetsVFX())
-                    gui = typeof(VFXShaderGraphLitGUI);
+                    gui = typeof(VFXShaderGraphSimpleLitGUI);
 #endif
                 context.AddCustomEditorForRenderPipeline(gui.FullName, universalRPType);
             }

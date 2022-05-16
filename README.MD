@@ -3,7 +3,7 @@ This plugin simply adds a Simple Lit material (SubTarget) to the Universal targe
 If Unity ever implements the Simple Lit master node themselves, it should be an in-place replacement for this. To the point where you'll likely even get code conflicts.
 
 ## Dependencies
-* Should work on Unity version 2021.2 or higher, with URP version 12 or higher
+* Works on Unity version 2021.2 or higher, with URP version 12 or higher
 
 ## How to install
 * Go to Package Manager in Unity
@@ -16,6 +16,3 @@ Once it's been installed, it should simply be a matter of just making a Shader G
 
 ### Example
 ![Shader Graph](https://i.imgur.com/r4LI0g5.png)
-
-## Known issues
-* VFX modifications have not been made, but should just be a missing GUI that needs to be created
