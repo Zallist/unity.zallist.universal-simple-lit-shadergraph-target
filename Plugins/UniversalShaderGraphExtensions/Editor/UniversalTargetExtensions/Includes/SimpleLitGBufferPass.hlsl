@@ -127,10 +127,14 @@ FragmentOutput frag(PackedVaryings packedInput)
     surface.clearCoatMask       = 0;
     surface.clearCoatSmoothness = 1;
 
+#if UNITY_VERSION >= 202210
+    surface.albedo = AlphaModulate(surface.albedo, surface.alpha);
+#endif
+
     Light mainLight = GetMainLight(inputData.shadowCoord, inputData.positionWS, inputData.shadowMask);
     MixRealtimeAndBakedGI(mainLight, inputData.normalWS, inputData.bakedGI, inputData.shadowMask);
     //half3 color = GlobalIllumination(brdfData, inputData.bakedGI, surfaceDescription.Occlusion, inputData.positionWS, inputData.normalWS, inputData.viewDirectionWS);
-    half4 color = half4(inputData.bakedGI * surfaceDescription.BaseColor + surfaceDescription.Emission, surfaceDescription.Alpha);
+    half4 color = half4(inputData.bakedGI * surface.albedo + surface.emission, surface.alpha);
 
     //return BRDFDataToGbuffer(brdfData, inputData, surfaceDescription.Smoothness, surfaceDescription.Emission + color, surfaceDescription.Occlusion);
     return SurfaceDataToGbuffer(surface, inputData, color.rgb, kLightingSimpleLit);

@@ -17,6 +17,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
     {
         static readonly GUID kSourceCodeGuid = new GUID("d6c78107b64145745805d963de80cc28"); // UniversalSimpleLitSubTarget.cs
 
+        // Should be in UniversalTarget
+        public const string kSimpleLitMaterialTypeTag = "\"UniversalMaterialType\" = \"SimpleLit\"";
+
 #if UNITY_2022_1_OR_NEWER
         public override int latestVersion => 1;
 #endif
@@ -374,7 +377,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 SubShaderDescriptor result = new SubShaderDescriptor()
                 {
                     pipelineTag = UniversalTarget.kPipelineTag,
-                    customTags = UniversalTarget.kLitMaterialTypeTag,
+                    //customTags = UniversalTarget.kLitMaterialTypeTag,
+                    customTags = kSimpleLitMaterialTypeTag,
                     renderType = renderType,
                     renderQueue = renderQueue,
                     generatesPreview = true,
@@ -433,7 +437,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 SubShaderDescriptor result = new SubShaderDescriptor()
                 {
                     pipelineTag = UniversalTarget.kPipelineTag,
-                    customTags = UniversalTarget.kLitMaterialTypeTag,
+                    //customTags = UniversalTarget.kLitMaterialTypeTag,
+                    customTags = kSimpleLitMaterialTypeTag,
                     renderType = renderType,
                     renderQueue = renderQueue,
                     generatesPreview = true,
