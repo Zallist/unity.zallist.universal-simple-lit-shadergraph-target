@@ -1009,11 +1009,10 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             const string kShadows = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl";
             const string kMetaInput = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl";
             //const string kForwardPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBRForwardPass.hlsl";
-            //const string kForwardPass = "Assets/Plugins/UniversalShaderGraphExtensions/Editor/UniversalTargetExtensions/Includes/SimpleLitForwardPass.hlsl";
             const string kForwardPass = "Packages/com.zallist.universal-shadergraph-extensions/Plugins/UniversalShaderGraphExtensions/Editor/UniversalTargetExtensions/Includes/SimpleLitForwardPass.hlsl";
             const string kGBuffer = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl";
-            // TODO : Replace GBufferPass for Simple one
-            const string kPBRGBufferPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBRGBufferPass.hlsl";
+            //const string kPBRGBufferPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBRGBufferPass.hlsl";
+            const string kSimpleLitGBufferPass = "Packages/com.zallist.universal-shadergraph-extensions/Plugins/UniversalShaderGraphExtensions/Editor/UniversalTargetExtensions/Includes/SimpleLitGBufferPass.hlsl";
             const string kLightingMetaPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/LightingMetaPass.hlsl";
             // TODO : Replace 2D for Simple one
             const string k2DPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBR2DPass.hlsl";
@@ -1042,7 +1041,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 // Post-graph
                 { CoreIncludes.CorePostgraph },
                 { kGBuffer, IncludeLocation.Postgraph },
-                { kPBRGBufferPass, IncludeLocation.Postgraph },
+                //{ kPBRGBufferPass, IncludeLocation.Postgraph },
+                { kSimpleLitGBufferPass, IncludeLocation.Postgraph },
             };
 
             public static readonly IncludeCollection Meta = new IncludeCollection
