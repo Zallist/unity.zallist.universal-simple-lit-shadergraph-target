@@ -19,4 +19,3 @@ Once it's been installed, it should simply be a matter of just making a Shader G
 
 ## Known issues
 * VFX modifications have not been made, but should just be a missing GUI that needs to be created
-* Deferred rendering path is not supported, since I didn't need it. Adding it should be a simple matter of creating the relevant .hlsl file for the GBuffers and then hooking the UniversalSimpleLitSubTarget to use it
