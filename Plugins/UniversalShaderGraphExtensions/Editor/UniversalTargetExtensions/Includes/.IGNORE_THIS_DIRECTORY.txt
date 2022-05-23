@@ -1,0 +1,1 @@
+This directory is only here to allow OLD Simple Lit shader graphs to still find the relevant *.hlsl include that they already have referenced, but once they've been re-saved then they won't reference it anymore.
