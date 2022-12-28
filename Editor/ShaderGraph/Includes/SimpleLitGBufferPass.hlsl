@@ -23,7 +23,11 @@ void InitializeInputData(Varyings input, SurfaceDescription surfaceDescription, 
         inputData.normalWS = input.normalWS;
     #endif
     inputData.normalWS = NormalizeNormalPerPixel(inputData.normalWS);
+#if UNITY_VERSION >= 202220
+    inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+#else
     inputData.viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));
+#endif
 
 #if defined(MAIN_LIGHT_CALCULATE_SHADOWS)
     inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
@@ -77,6 +81,12 @@ FragmentOutput frag(PackedVaryings packedInput)
     #else
         half alpha = 1;
     #endif
+
+#if UNITY_VERSION >= 202220
+    #if defined(LOD_FADE_CROSSFADE) && USE_UNITY_CROSSFADE
+        LODFadeCrossFade(unpacked.positionCS);
+    #endif
+#endif
 
     InputData inputData;
     InitializeInputData(unpacked, surfaceDescription, inputData);

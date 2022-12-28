@@ -20,7 +20,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         // Should be in UniversalTarget
         public const string kSimpleLitMaterialTypeTag = "\"UniversalMaterialType\" = \"SimpleLit\"";
 
-#if UNITY_2022_1_OR_NEWER
+#if UNITY_2022_2_OR_NEWER
+        public override int latestVersion => 2;
+#elif UNITY_2022_1_OR_NEWER
         public override int latestVersion => 1;
 #endif
 
@@ -32,9 +34,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 
         [SerializeField]
         NormalDropOffSpace m_NormalDropOffSpace = NormalDropOffSpace.Tangent;
-
-        //[SerializeField]
-        //bool m_ClearCoat = false;
 
 #if UNITY_2022_1_OR_NEWER
         [SerializeField]
@@ -67,21 +66,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             set => m_NormalDropOffSpace = value;
         }
 
-        //public bool clearCoat
-        //{
-        //    get => m_ClearCoat;
-        //    set => m_ClearCoat = value;
-        //}
-
-        //private bool complexLit
-        //{
-        //    get
-        //    {
-        //        // Rules for switching to ComplexLit with forward only pass
-        //        return clearCoat; // && <complex feature>
-        //    }
-        //}
-
 #if UNITY_2022_1_OR_NEWER
         public bool blendModePreserveSpecular
         {
@@ -110,11 +94,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 
             // Process SubShaders
 #if UNITY_2022_1_OR_NEWER
-            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitComputeDotsSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ blendModePreserveSpecular, specularHighlights)));
-            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitGLESSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ blendModePreserveSpecular, specularHighlights)));
+            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitComputeDotsSubShader(target, target.renderType, target.renderQueue, blendModePreserveSpecular, specularHighlights)));
+            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitGLESSubShader(target, target.renderType, target.renderQueue, blendModePreserveSpecular, specularHighlights)));
 #else
-            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitComputeDotsSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ /*blendModePreserveSpecular,*/ specularHighlights)));
-            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitGLESSubShader(target, /*workflowMode,*/ target.renderType, target.renderQueue, /*complexLit,*/ /*blendModePreserveSpecular,*/ specularHighlights)));
+            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitComputeDotsSubShader(target, target.renderType, target.renderQueue, specularHighlights)));
+            context.AddSubShader(PostProcessSubShader(SubShaders.SimpleLitGLESSubShader(target, target.renderType, target.renderQueue, specularHighlights)));
 #endif
         }
 
@@ -162,9 +146,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 descs.Contains(BlockFields.SurfaceDescription.NormalTS) ||
                 descs.Contains(BlockFields.SurfaceDescription.NormalWS));
             // Complex Lit
-
-            // Template Predicates
-            //context.AddField(UniversalFields.PredicateClearCoat, clearCoat);
         }
 
         public override void GetActiveBlocks(ref TargetActiveBlockContext context)
@@ -174,18 +155,12 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             context.AddBlock(BlockFields.SurfaceDescription.NormalTS, normalDropOffSpace == NormalDropOffSpace.Tangent);
             context.AddBlock(BlockFields.SurfaceDescription.NormalWS, normalDropOffSpace == NormalDropOffSpace.World);
             context.AddBlock(BlockFields.SurfaceDescription.Emission);
-            //context.AddBlock(BlockFields.SurfaceDescription.Occlusion);
 
             // when the surface options are material controlled, we must show all of these blocks
             // when target controlled, we can cull the unnecessary blocks
-            context.AddBlock(BlockFields.SurfaceDescription.Specular, /*(workflowMode == WorkflowMode.Specular)*/ specularHighlights || target.allowMaterialOverride);
-            //context.AddBlock(BlockFields.SurfaceDescription.Metallic, (workflowMode == WorkflowMode.Metallic) || target.allowMaterialOverride);
+            context.AddBlock(BlockFields.SurfaceDescription.Specular, specularHighlights || target.allowMaterialOverride);
             context.AddBlock(BlockFields.SurfaceDescription.Alpha, (target.surfaceType == SurfaceType.Transparent || target.alphaClip) || target.allowMaterialOverride);
             context.AddBlock(BlockFields.SurfaceDescription.AlphaClipThreshold, (target.alphaClip) || target.allowMaterialOverride);
-
-            // always controlled by subtarget clearCoat checkbox (no Material control)
-            //context.AddBlock(BlockFields.SurfaceDescription.CoatMask, clearCoat);
-            //context.AddBlock(BlockFields.SurfaceDescription.CoatSmoothness, clearCoat);
         }
 
         public override void CollectShaderProperties(PropertyCollector collector, GenerationMode generationMode)
@@ -211,6 +186,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 collector.AddFloatProperty(Property.ZWriteControl, (float)target.zWriteControl);
                 collector.AddFloatProperty(Property.ZTest, (float)target.zTestMode);    // ztest mode is designed to directly pass as ztest
                 collector.AddFloatProperty(Property.CullMode, (float)target.renderFace);    // render face enum is designed to directly pass as a cull mode
+
+#if UNITY_2022_2_OR_NEWER
+                bool enableAlphaToMask = (target.alphaClip && (target.surfaceType == SurfaceType.Opaque));
+                collector.AddFloatProperty(Property.AlphaToMask, enableAlphaToMask ? 1.0f : 0.0f);
+#endif
             }
 
             // We always need these properties regardless of whether the material is allowed to override other shader properties.
@@ -224,16 +204,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         {
             var universalTarget = (target as UniversalTarget);
             universalTarget.AddDefaultMaterialOverrideGUI(ref context, onChange, registerUndo);
-
-            //context.AddProperty("Workflow Mode", new EnumField(WorkflowMode.Metallic) { value = workflowMode }, (evt) =>
-            //{
-            //    if (Equals(workflowMode, evt.newValue))
-            //        return;
-
-            //    registerUndo("Change Workflow");
-            //    workflowMode = (WorkflowMode)evt.newValue;
-            //    onChange();
-            //});
 
             context.AddProperty("Specular Highlights", new Toggle() { value = specularHighlights }, (evt) =>
             {
@@ -256,16 +226,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 normalDropOffSpace = (NormalDropOffSpace)evt.newValue;
                 onChange();
             });
-
-            //context.AddProperty("Clear Coat", new Toggle() { value = clearCoat }, (evt) =>
-            //{
-            //    if (Equals(clearCoat, evt.newValue))
-            //        return;
-
-            //    registerUndo("Change Clear Coat");
-            //    clearCoat = evt.newValue;
-            //    onChange();
-            //});
 
 #if UNITY_2022_1_OR_NEWER
             if (target.surfaceType == SurfaceType.Transparent)
@@ -291,54 +251,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
             hash = hash * 23 + target.allowMaterialOverride.GetHashCode();
             return hash;
         }
-
-        //public bool TryUpgradeFromMasterNode(IMasterNode1 masterNode, out Dictionary<BlockFieldDescriptor, int> blockMap)
-        //{
-        //    blockMap = null;
-        //    if (!(masterNode is PBRMasterNode1 pbrMasterNode))
-        //        return false;
-
-        //    m_WorkflowMode = (WorkflowMode)pbrMasterNode.m_Model;
-        //    m_NormalDropOffSpace = (NormalDropOffSpace)pbrMasterNode.m_NormalDropOffSpace;
-
-        //    // Handle mapping of Normal block specifically
-        //    BlockFieldDescriptor normalBlock;
-        //    switch (m_NormalDropOffSpace)
-        //    {
-        //        case NormalDropOffSpace.Object:
-        //            normalBlock = BlockFields.SurfaceDescription.NormalOS;
-        //            break;
-        //        case NormalDropOffSpace.World:
-        //            normalBlock = BlockFields.SurfaceDescription.NormalWS;
-        //            break;
-        //        default:
-        //            normalBlock = BlockFields.SurfaceDescription.NormalTS;
-        //            break;
-        //    }
-
-        //    // Set blockmap
-        //    blockMap = new Dictionary<BlockFieldDescriptor, int>()
-        //    {
-        //        { BlockFields.VertexDescription.Position, 9 },
-        //        { BlockFields.VertexDescription.Normal, 10 },
-        //        { BlockFields.VertexDescription.Tangent, 11 },
-        //        { BlockFields.SurfaceDescription.BaseColor, 0 },
-        //        { normalBlock, 1 },
-        //        { BlockFields.SurfaceDescription.Emission, 4 },
-        //        { BlockFields.SurfaceDescription.Smoothness, 5 },
-        //        //{ BlockFields.SurfaceDescription.Occlusion, 6 },
-        //        { BlockFields.SurfaceDescription.Alpha, 7 },
-        //        { BlockFields.SurfaceDescription.AlphaClipThreshold, 8 },
-        //    };
-
-        //    // PBRMasterNode adds/removes Metallic/Specular based on settings
-        //    if (m_WorkflowMode == WorkflowMode.Specular)
-        //        blockMap.Add(BlockFields.SurfaceDescription.Specular, 3);
-        //    //else if (m_WorkflowMode == WorkflowMode.Metallic)
-        //    //    blockMap.Add(BlockFields.SurfaceDescription.Metallic, 2);
-
-        //    return true;
-        //}
 
 #if UNITY_2022_1_OR_NEWER
         internal override void OnAfterParentTargetDeserialized()
@@ -369,15 +281,14 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
         {
             // SM 4.5, compute with dots instancing
 #if UNITY_2022_1_OR_NEWER
-            public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ bool blendModePreserveSpecular, bool specularHighlights)
+            public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, string renderType, string renderQueue, bool blendModePreserveSpecular, bool specularHighlights)
 #else
-            public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ /* bool blendModePreserveSpecular,*/ bool specularHighlights)
+            public static SubShaderDescriptor SimpleLitComputeDotsSubShader(UniversalTarget target, string renderType, string renderQueue, bool specularHighlights)
 #endif
             {
                 SubShaderDescriptor result = new SubShaderDescriptor()
                 {
                     pipelineTag = UniversalTarget.kPipelineTag,
-                    //customTags = UniversalTarget.kLitMaterialTypeTag,
                     customTags = kSimpleLitMaterialTypeTag,
                     renderType = renderType,
                     renderQueue = renderQueue,
@@ -385,48 +296,75 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     passes = new PassCollection()
                 };
 
-                //if (complexLit)
-                //    result.passes.Add(LitPasses.ForwardOnly(target, workflowMode, complexLit, blendModePreserveSpecular, CoreBlockMasks.Vertex, LitBlockMasks.FragmentComplexLit, CorePragmas.DOTSForward));
-                //else
-#if UNITY_2022_1_OR_NEWER
-                result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights, CorePragmas.DOTSForward));
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(SimpleLitPasses.Forward(target, blendModePreserveSpecular, specularHighlights, CorePragmas.ForwardSM45, SimpleLitKeywords.DOTSForward));
+#elif UNITY_2022_1_OR_NEWER
+                result.passes.Add(SimpleLitPasses.Forward(target, blendModePreserveSpecular, specularHighlights, CorePragmas.DOTSForward));
 #else
-                result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights, CorePragmas.DOTSForward));
+                result.passes.Add(SimpleLitPasses.Forward(target, specularHighlights, CorePragmas.DOTSForward));
 #endif
 
-                //if (!complexLit)
 #if UNITY_2022_1_OR_NEWER
-                result.passes.Add(SimpleLitPasses.GBuffer(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights));
+                result.passes.Add(SimpleLitPasses.GBuffer(target, blendModePreserveSpecular, specularHighlights));
 #else
-                result.passes.Add(SimpleLitPasses.GBuffer(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights));
+                result.passes.Add(SimpleLitPasses.GBuffer(target, specularHighlights));
 #endif
 
                 // cull the shadowcaster pass if we know it will never be used
                 if (target.castShadows || target.allowMaterialOverride)
+#if UNITY_2022_2_OR_NEWER
+                    result.passes.Add(PassVariant(CorePasses.ShadowCaster(target), CorePragmas.InstancedSM45));
+#else
                     result.passes.Add(PassVariant(CorePasses.ShadowCaster(target), CorePragmas.DOTSInstanced));
+#endif
 
                 if (target.mayWriteDepth)
+#if UNITY_2022_2_OR_NEWER
+                    result.passes.Add(PassVariant(CorePasses.DepthOnly(target), CorePragmas.InstancedSM45));
+#else
                     result.passes.Add(PassVariant(CorePasses.DepthOnly(target), CorePragmas.DOTSInstanced));
+#endif
 
-                //if (complexLit)
-                //    result.passes.Add(PassVariant(LitPasses.DepthNormalOnly(target), CorePragmas.DOTSInstanced));
-                //else
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(PassVariant(SimpleLitPasses.DepthNormal(target), CorePragmas.InstancedSM45));
+#else
                 result.passes.Add(PassVariant(SimpleLitPasses.DepthNormal(target), CorePragmas.DOTSInstanced));
+#endif
+
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(PassVariant(SimpleLitPasses.Meta(target), CorePragmas.DefaultSM45));
+#else
                 result.passes.Add(PassVariant(SimpleLitPasses.Meta(target), CorePragmas.DOTSDefault));
+#endif
+
                 // Currently neither of these passes (selection/picking) can be last for the game view for
                 // UI shaders to render correctly. Verify [1352225] before changing this order.
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(PassVariant(CorePasses.SceneSelection(target), CorePragmas.DefaultSM45));
+#else
                 result.passes.Add(PassVariant(CorePasses.SceneSelection(target), CorePragmas.DOTSDefault));
-                result.passes.Add(PassVariant(CorePasses.ScenePicking(target), CorePragmas.DOTSDefault));
+#endif
 
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(PassVariant(CorePasses.ScenePicking(target), CorePragmas.DefaultSM45));
+#else
+                result.passes.Add(PassVariant(CorePasses.ScenePicking(target), CorePragmas.DOTSDefault));
+#endif
+
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(PassVariant(SimpleLitPasses._2D(target), CorePragmas.DefaultSM45));
+#else
                 result.passes.Add(PassVariant(SimpleLitPasses._2D(target), CorePragmas.DOTSDefault));
+#endif
+
 
                 return result;
             }
 
 #if UNITY_2022_1_OR_NEWER
-            public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ bool blendModePreserveSpecular, bool specularHighlights)
+            public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, string renderType, string renderQueue, bool blendModePreserveSpecular, bool specularHighlights)
 #else
-            public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, /*WorkflowMode workflowMode,*/ string renderType, string renderQueue, /*bool complexLit,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights)
+            public static SubShaderDescriptor SimpleLitGLESSubShader(UniversalTarget target, string renderType, string renderQueue, bool specularHighlights)
 #endif
             {
                 // SM 2.0, GLES
@@ -437,7 +375,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 SubShaderDescriptor result = new SubShaderDescriptor()
                 {
                     pipelineTag = UniversalTarget.kPipelineTag,
-                    //customTags = UniversalTarget.kLitMaterialTypeTag,
                     customTags = kSimpleLitMaterialTypeTag,
                     renderType = renderType,
                     renderQueue = renderQueue,
@@ -445,13 +382,12 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     passes = new PassCollection()
                 };
 
-                //if (complexLit)
-                //    result.passes.Add(LitPasses.ForwardOnly(target, workflowMode, complexLit, blendModePreserveSpecular, CoreBlockMasks.Vertex, LitBlockMasks.FragmentComplexLit, CorePragmas.Forward));
-                //else
-#if UNITY_2022_1_OR_NEWER
-                result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ blendModePreserveSpecular, specularHighlights));
+#if UNITY_2022_2_OR_NEWER
+                result.passes.Add(SimpleLitPasses.Forward(target, blendModePreserveSpecular, specularHighlights, CorePragmas.Forward, SimpleLitKeywords.Forward));
+#elif UNITY_2022_1_OR_NEWER
+                result.passes.Add(SimpleLitPasses.Forward(target, blendModePreserveSpecular, specularHighlights));
 #else
-                result.passes.Add(SimpleLitPasses.Forward(target, /*workflowMode,*/ /*blendModePreserveSpecular,*/ specularHighlights));
+                result.passes.Add(SimpleLitPasses.Forward(target, specularHighlights));
 #endif
 
                 // cull the shadowcaster pass if we know it will never be used
@@ -461,9 +397,6 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 if (target.mayWriteDepth)
                     result.passes.Add(CorePasses.DepthOnly(target));
 
-                //if (complexLit)
-                //    result.passes.Add(CorePasses.DepthNormalOnly(target));
-                //else
                 result.passes.Add(CorePasses.DepthNormal(target));
                 result.passes.Add(SimpleLitPasses.Meta(target));
                 // Currently neither of these passes (selection/picking) can be last for the game view for
@@ -476,9 +409,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 return result;
             }
         }
-        #endregion
+#endregion
 
-        #region Passes
+#region Passes
         static class SimpleLitPasses
         {
             static void AddWorkflowModeControlToPass(ref PassDescriptor pass, UniversalTarget target, WorkflowMode workflowMode)
@@ -505,10 +438,17 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     pass.defines.Add(SimpleLitKeywords.ReceiveShadowsOff, 1);
             }
 
-#if UNITY_2022_1_OR_NEWER
-            public static PassDescriptor Forward(UniversalTarget target, /*WorkflowMode workflowMode,*/ bool blendModePreserveSpecular, bool specularHighlights, PragmaCollection pragmas = null)
+#if UNITY_2022_2_OR_NEWER
+            public static PassDescriptor Forward(
+                UniversalTarget target, 
+                bool blendModePreserveSpecular, 
+                bool specularHighlights, 
+                PragmaCollection pragmas, 
+                KeywordCollection keywords)
+#elif UNITY_2022_1_OR_NEWER
+            public static PassDescriptor Forward(UniversalTarget target, bool blendModePreserveSpecular, bool specularHighlights, PragmaCollection pragmas = null)
 #else
-            public static PassDescriptor Forward(UniversalTarget target, /*WorkflowMode workflowMode,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights, PragmaCollection pragmas = null)
+            public static PassDescriptor Forward(UniversalTarget target, bool specularHighlights, PragmaCollection pragmas = null)
 #endif
             {
                 var result = new PassDescriptor()
@@ -540,7 +480,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #endif
                     pragmas = pragmas ?? CorePragmas.Forward,     // NOTE: SM 2.0 only GL
                     defines = new DefineCollection() { CoreDefines.UseFragmentFog },
+#if UNITY_2022_2_OR_NEWER
+                    keywords = new KeywordCollection() { keywords },
+#else
                     keywords = new KeywordCollection() { SimpleLitKeywords.Forward },
+#endif
                     includes = SimpleLitIncludes.Forward,
 
                     // Custom Interpolator Support
@@ -552,69 +496,24 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #else
                 CorePasses.AddTargetSurfaceControlsToPass(ref result, target/*, blendModePreserveSpecular*/);
 #endif
+#if UNITY_2022_2_OR_NEWER
+                CorePasses.AddAlphaToMaskControlToPass(ref result, target);
+#endif
                 AddWorkflowModeControlToPass(ref result, target, workflowMode);
                 AddSpecularHighlightsControlToPass(ref result, target, specularHighlights);
                 AddReceiveShadowsControlToPass(ref result, target, target.receiveShadows);
+#if UNITY_2022_2_OR_NEWER
+                CorePasses.AddLODCrossFadeControlToPass(ref result, target);
+#endif
 
                 return result;
             }
 
-            //public static PassDescriptor ForwardOnly(
-            //    UniversalTarget target,
-            //    WorkflowMode workflowMode,
-            //    bool complexLit,
-            //    bool blendModePreserveSpecular,
-            //    BlockFieldDescriptor[] vertexBlocks,
-            //    BlockFieldDescriptor[] pixelBlocks,
-            //    PragmaCollection pragmas)
-            //{
-            //    var result = new PassDescriptor
-            //    {
-            //        // Definition
-            //        displayName = "Universal Forward Only",
-            //        referenceName = "SHADERPASS_FORWARDONLY",
-            //        lightMode = "UniversalForwardOnly",
-            //        useInPreview = true,
-
-            //        // Template
-            //        passTemplatePath = UniversalTarget.kUberTemplatePath,
-            //        sharedTemplateDirectories = UniversalTarget.kSharedTemplateDirectories,
-
-            //        // Port Mask
-            //        validVertexBlocks = vertexBlocks,
-            //        validPixelBlocks = pixelBlocks,
-
-            //        // Fields
-            //        structs = CoreStructCollections.Default,
-            //        requiredFields = LitRequiredFields.Forward,
-            //        fieldDependencies = CoreFieldDependencies.Default,
-
-            //        // Conditional State
-            //        renderStates = CoreRenderStates.UberSwitchedRenderState(target, blendModePreserveSpecular),
-            //        pragmas = pragmas,
-            //        defines = new DefineCollection() { CoreDefines.UseFragmentFog },
-            //        keywords = new KeywordCollection() { LitKeywords.Forward },
-            //        includes = LitIncludes.Forward,
-
-            //        // Custom Interpolator Support
-            //        customInterpolators = CoreCustomInterpDescriptors.Common
-            //    };
-
-            //    if (complexLit)
-            //        result.defines.Add(LitDefines.ClearCoat, 1);
-
-            //    CorePasses.AddTargetSurfaceControlsToPass(ref result, target, blendModePreserveSpecular);
-            //    AddWorkflowModeControlToPass(ref result, target, workflowMode);
-            //    AddReceiveShadowsControlToPass(ref result, target, target.receiveShadows);
-
-            //    return result;
-            //}
-
             // Deferred only in SM4.5, MRT not supported in GLES2
 #if UNITY_2022_1_OR_NEWER
-            public static PassDescriptor GBuffer(UniversalTarget target, /*WorkflowMode workflowMode,*/ bool blendModePreserveSpecular, bool specularHighlights)
+            public static PassDescriptor GBuffer(UniversalTarget target, bool blendModePreserveSpecular, bool specularHighlights)
 #else
-            public static PassDescriptor GBuffer(UniversalTarget target, /*WorkflowMode workflowMode,*/ /*bool blendModePreserveSpecular,*/ bool specularHighlights)
+            public static PassDescriptor GBuffer(UniversalTarget target, bool specularHighlights)
 #endif
             {
                 var result = new PassDescriptor
@@ -623,6 +522,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     displayName = "GBuffer",
                     referenceName = "SHADERPASS_GBUFFER",
                     lightMode = "UniversalGBuffer",
+#if UNITY_2022_2_OR_NEWER
+                    useInPreview = true,
+#endif
 
                     // Template
                     passTemplatePath = UniversalTarget.kUberTemplatePath,
@@ -643,7 +545,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
 #else
                     renderStates = CoreRenderStates.UberSwitchedRenderState(target/*, blendModePreserveSpecular*/),
 #endif
+#if UNITY_2022_2_OR_NEWER
+                    pragmas = CorePragmas.GBufferSM45,
+#else
                     pragmas = CorePragmas.DOTSGBuffer,
+#endif
                     defines = new DefineCollection() { CoreDefines.UseFragmentFog },
                     keywords = new KeywordCollection() { SimpleLitKeywords.GBuffer },
                     includes = SimpleLitIncludes.GBuffer,
@@ -660,6 +566,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 AddWorkflowModeControlToPass(ref result, target, workflowMode);
                 AddSpecularHighlightsControlToPass(ref result, target, specularHighlights);
                 AddReceiveShadowsControlToPass(ref result, target, target.receiveShadows);
+#if UNITY_2022_2_OR_NEWER
+                CorePasses.AddLODCrossFadeControlToPass(ref result, target);
+#endif
 
                 return result;
             }
@@ -765,7 +674,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                     renderStates = CoreRenderStates.DepthNormalsOnly(target),
                     pragmas = CorePragmas.Instanced,
                     defines = new DefineCollection(),
+#if UNITY_2022_2_OR_NEWER
+                    keywords = new KeywordCollection() { CoreKeywords.DOTSDepthNormal },
+#else
                     keywords = new KeywordCollection(),
+#endif
                     includes = CoreIncludes.DepthNormalsOnly,
 
                     // Custom Interpolator Support
@@ -773,52 +686,16 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 };
 
                 CorePasses.AddAlphaClipControlToPass(ref result, target);
+#if UNITY_2022_2_OR_NEWER
+                CorePasses.AddLODCrossFadeControlToPass(ref result, target);
+#endif
 
                 return result;
             }
-
-            //public static PassDescriptor DepthNormalOnly(UniversalTarget target)
-            //{
-            //    var result = new PassDescriptor()
-            //    {
-            //        // Definition
-            //        displayName = "DepthNormalsOnly",
-            //        referenceName = "SHADERPASS_DEPTHNORMALSONLY",
-            //        lightMode = "DepthNormalsOnly",
-            //        useInPreview = false,
-
-            //        // Template
-            //        passTemplatePath = UniversalTarget.kUberTemplatePath,
-            //        sharedTemplateDirectories = UniversalTarget.kSharedTemplateDirectories,
-
-            //        // Port Mask
-            //        validVertexBlocks = CoreBlockMasks.Vertex,
-            //        validPixelBlocks = CoreBlockMasks.FragmentDepthNormals,
-
-            //        // Fields
-            //        structs = CoreStructCollections.Default,
-            //        requiredFields = CoreRequiredFields.DepthNormals,
-            //        fieldDependencies = CoreFieldDependencies.Default,
-
-            //        // Conditional State
-            //        renderStates = CoreRenderStates.DepthNormalsOnly(target),
-            //        pragmas = CorePragmas.Instanced,
-            //        defines = new DefineCollection(),
-            //        keywords = new KeywordCollection(),
-            //        includes = CoreIncludes.DepthNormalsOnly,
-
-            //        // Custom Interpolator Support
-            //        customInterpolators = CoreCustomInterpDescriptors.Common
-            //    };
-
-            //    CorePasses.AddAlphaClipControlToPass(ref result, target);
-
-            //    return result;
-            //}
         }
-        #endregion
+#endregion
 
-        #region PortMasks
+#region PortMasks
         static class SimpleLitBlockMasks
         {
             public static readonly BlockFieldDescriptor[] FragmentSimpleLit = new BlockFieldDescriptor[]
@@ -828,30 +705,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 BlockFields.SurfaceDescription.NormalTS,
                 BlockFields.SurfaceDescription.NormalWS,
                 BlockFields.SurfaceDescription.Emission,
-                //BlockFields.SurfaceDescription.Metallic,
                 BlockFields.SurfaceDescription.Specular,
                 BlockFields.SurfaceDescription.Smoothness,
-                //BlockFields.SurfaceDescription.Occlusion,
                 BlockFields.SurfaceDescription.Alpha,
                 BlockFields.SurfaceDescription.AlphaClipThreshold,
             };
-
-            //public static readonly BlockFieldDescriptor[] FragmentComplexLit = new BlockFieldDescriptor[]
-            //{
-            //    BlockFields.SurfaceDescription.BaseColor,
-            //    BlockFields.SurfaceDescription.NormalOS,
-            //    BlockFields.SurfaceDescription.NormalTS,
-            //    BlockFields.SurfaceDescription.NormalWS,
-            //    BlockFields.SurfaceDescription.Emission,
-            //    BlockFields.SurfaceDescription.Metallic,
-            //    BlockFields.SurfaceDescription.Specular,
-            //    BlockFields.SurfaceDescription.Smoothness,
-            //    BlockFields.SurfaceDescription.Occlusion,
-            //    BlockFields.SurfaceDescription.Alpha,
-            //    BlockFields.SurfaceDescription.AlphaClipThreshold,
-            //    BlockFields.SurfaceDescription.CoatMask,
-            //    BlockFields.SurfaceDescription.CoatSmoothness,
-            //};
 
             public static readonly BlockFieldDescriptor[] FragmentMeta = new BlockFieldDescriptor[]
             {
@@ -861,9 +719,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 BlockFields.SurfaceDescription.AlphaClipThreshold,
             };
         }
-        #endregion
+#endregion
 
-        #region RequiredFields
+#region RequiredFields
         static class SimpleLitRequiredFields
         {
             public static readonly FieldCollection Forward = new FieldCollection()
@@ -908,21 +766,11 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 StructFields.Varyings.texCoord2,                        // LightCoord
             };
         }
-        #endregion
+#endregion
 
-        #region Defines
+#region Defines
         static class SimpleLitDefines
         {
-            //public static readonly KeywordDescriptor ClearCoat = new KeywordDescriptor()
-            //{
-            //    displayName = "Clear Coat",
-            //    referenceName = "_CLEARCOAT",
-            //    type = KeywordType.Boolean,
-            //    definition = KeywordDefinition.ShaderFeature,
-            //    scope = KeywordScope.Local,
-            //    stages = KeywordShaderStage.Fragment
-            //};
-
             public static readonly KeywordDescriptor SpecularSetup = new KeywordDescriptor()
             {
                 displayName = "Specular Setup",
@@ -943,9 +791,9 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 stages = KeywordShaderStage.Fragment
             };
         }
-        #endregion
+#endregion
 
-        #region Keywords
+#region Keywords
         static class SimpleLitKeywords
         {
             public static readonly KeywordDescriptor ReceiveShadowsOff = new KeywordDescriptor()
@@ -957,6 +805,8 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 scope = KeywordScope.Local,
             };
 
+#if UNITY_2022_2_OR_NEWER
+#else
             public static readonly KeywordDescriptor ScreenSpaceAmbientOcclusion = new KeywordDescriptor()
             {
                 displayName = "Screen Space Ambient Occlusion",
@@ -966,10 +816,15 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 scope = KeywordScope.Global,
                 stages = KeywordShaderStage.Fragment,
             };
+#endif
 
             public static readonly KeywordCollection Forward = new KeywordCollection
             {
+#if UNITY_2022_2_OR_NEWER
+                { CoreKeywordDescriptors.ScreenSpaceAmbientOcclusion },
+#else
                 { ScreenSpaceAmbientOcclusion },
+#endif
                 { CoreKeywordDescriptors.StaticLightmap },
                 { CoreKeywordDescriptors.DynamicLightmap },
                 { CoreKeywordDescriptors.DirectionalLightmapCombined },
@@ -985,8 +840,20 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 { CoreKeywordDescriptors.LightLayers },
                 { CoreKeywordDescriptors.DebugDisplay },
                 { CoreKeywordDescriptors.LightCookies },
+#if UNITY_2022_2_OR_NEWER
+                { CoreKeywordDescriptors.ForwardPlus },
+#else
                 { CoreKeywordDescriptors.ClusteredRendering },
+#endif
             };
+
+#if UNITY_2022_2_OR_NEWER
+            public static readonly KeywordCollection DOTSForward = new KeywordCollection
+            {
+                { Forward },
+                { CoreKeywordDescriptors.WriteRenderingLayers },
+            };
+#endif
 
             public static readonly KeywordCollection GBuffer = new KeywordCollection
             {
@@ -1001,22 +868,24 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 { CoreKeywordDescriptors.MixedLightingSubtractive },
                 { CoreKeywordDescriptors.DBuffer },
                 { CoreKeywordDescriptors.GBufferNormalsOct },
+#if UNITY_2022_2_OR_NEWER
+                { CoreKeywordDescriptors.WriteRenderingLayers },
+#else
                 { CoreKeywordDescriptors.LightLayers },
+#endif
                 { CoreKeywordDescriptors.RenderPassEnabled },
                 { CoreKeywordDescriptors.DebugDisplay },
             };
         }
-        #endregion
+#endregion
 
-        #region Includes
+#region Includes
         static class SimpleLitIncludes
         {
             const string kShadows = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl";
             const string kMetaInput = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl";
-            //const string kForwardPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBRForwardPass.hlsl";
             const string kForwardPass = "Packages/com.zallist.universal-shadergraph-extensions/Editor/ShaderGraph/Includes/SimpleLitForwardPass.hlsl";
             const string kGBuffer = "Packages/com.unity.render-pipelines.universal/ShaderLibrary/UnityGBuffer.hlsl";
-            //const string kPBRGBufferPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/PBRGBufferPass.hlsl";
             const string kSimpleLitGBufferPass = "Packages/com.zallist.universal-shadergraph-extensions/Editor/ShaderGraph/Includes/SimpleLitGBufferPass.hlsl";
             const string kLightingMetaPass = "Packages/com.unity.render-pipelines.universal/Editor/ShaderGraph/Includes/LightingMetaPass.hlsl";
             // TODO : Replace 2D for Simple one
@@ -1073,7 +942,7 @@ namespace UnityEditor.Rendering.Universal.ShaderGraph
                 { k2DPass, IncludeLocation.Postgraph },
             };
         }
-        #endregion
+#endregion
     }
 
     public static class SimpleLitProperty

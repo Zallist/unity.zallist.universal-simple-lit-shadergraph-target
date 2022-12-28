@@ -1,7 +1,7 @@
 {
   "name": "com.zallist.universal-shadergraph-extensions",
   "displayName": "Universal Simple Lit ShaderGraph Target",
-  "version": "1.3.1",
+  "version": "2.0.0",
   "documentationUrl": "https://github.com/Zallist/unity.zallist.universal-simple-lit-shadergraph-target",
   "licensesUrl": "https://github.com/Zallist/unity.zallist.universal-simple-lit-shadergraph-target/blob/main/LICENSE",
   "description": "This plugin simply adds a Simple Lit material (SubTarget) to the Universal target for Shader Graph"
