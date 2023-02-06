@@ -109,14 +109,17 @@ FragmentOutput frag(PackedVaryings packedInput)
     #endif
 
 #ifdef _DBUFFER
+    // ApplyDecal needs modifiable values for metallic and occlusion
+    // but they end up not being used, so feed them a throwaway value
+    float throwaway = 0.0;
     ApplyDecal(unpacked.positionCS,
         surfaceDescription.BaseColor,
         specular,
         inputData.normalWS,
         /*metallic,*/
-        0,
+        throwaway,
         /*surfaceDescription.Occlusion,*/
-        1,
+        throwaway,
         surfaceDescription.Smoothness);
 #endif
 
